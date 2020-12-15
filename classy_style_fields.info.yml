@@ -1,0 +1,7 @@
+name: Classy Paragraphs Fields
+description: Configure each classy paragraphs style to be available in each of the classy paragraphs reference fields.
+package: Custom
+type: module
+core: 8.x
+dependencies:
+  - classy_paragraphs:classy_paragraphs

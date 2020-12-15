@@ -1,0 +1,26 @@
+/** Classy Paragraph Add/Edit screen to Style the Fieldgroups and checkboxes config */
+#edit-classy-fields > .fieldset-wrapper > .fieldgroup[id^="edit-classy-fields"] {
+  border: 1px solid #999;
+  padding: 0 10px;
+}
+#edit-classy-fields .fieldset-wrapper > .fieldgroup[id^="edit-classy-fields"] > legend {
+  text-decoration: underline;
+}
+#edit-classy-fields .fieldset-wrapper > .fieldgroup[id^="edit-classy-fields"] > .fieldset-wrapper {
+  display: flex;
+}
+#edit-classy-fields .fieldset-wrapper > .fieldgroup[id^="edit-classy-fields"] > .fieldset-wrapper > .fieldgroup {
+  margin-right: 30px;
+}
+#edit-classy-fields .fieldset-wrapper > .fieldgroup[id^="edit-classy-fields"] > .fieldset-wrapper > .fieldgroup .form-checkboxes > .form-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#edit-classy-fields .fieldset-wrapper > .fieldgroup[id^="edit-classy-fields"] > .fieldset-wrapper > .fieldgroup .form-checkboxes label {
+  margin-left: 10px;
+}
+#edit-classy-fields .fieldset-wrapper > .fieldgroup[id^="edit-classy-fields"] > .fieldset-wrapper > .fieldgroup input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}

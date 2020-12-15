@@ -1,0 +1,4 @@
+classy_style_admin:
+  css:
+    theme:
+      css/classy_style_fields.css: {}

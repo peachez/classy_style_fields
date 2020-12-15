@@ -1,0 +1,117 @@
+<?php
+
+module_load_include('inc', 'classy_style_fields', 'classy_style_fields.admin');
+define("CLASSY_STYLE_FIELDS_CLASSY_FIELDS", 'classy_fields_config');
+
+// You can select the field type on the Form Display tab of the entity's fields.
+  // IMPORTANT: This module does not filter when the field type is:
+  //  - "Autocomplete" (entity_reference_autocomplete)
+  //  - "Autocomplete (draggable table)" (string_textfield)
+  //  - "Autocomplete (Tags style)" (entity_reference_autocomplete_tags)
+function classy_style_fields_field_widget_form_alter(&$element, &$form_state, $context) {
+  $field_def = $context['items']->getFieldDefinition();
+  $target_bundle = $field_def->getSetting('target_type');
+
+  // Filter the classy styles for a field whether the field is a select or autocomlete field.
+  $field_type = $context['widget']->getPluginId();
+  if (in_array($field_type, ['options_select', 'options_buttons'])) {
+    $field_def = $context['items']->getFieldDefinition();
+    $target_bundle = $field_def->getSetting('target_type');
+
+    if ($target_bundle == 'classy_paragraphs_style') {
+      $entity_type = $field_def->getTargetEntityTypeId();
+      $bundle = $field_def->getTargetBundle();
+
+      $map = _classy_style_fields_classy_paragraph_styles_map($entity_type, $bundle);
+      if (isset($map[$field_def->getName()])) {
+        // Only keep styles which are listed in the field's style list
+        $styles = $map[$field_def->getName()];
+        $element['#options'] = _classy_style_fields_filter_and_sort_classy_field_options($element['#options'], $styles, $field_type);
+      }
+    }
+  }
+  // Paragraphs with classy style fields get filtered here
+  elseif ($field_type == 'entity_reference_paragraphs') {
+    // We filter out the paragraph type classy paragraph styles to what is allowed.
+    $map = _classy_style_fields_classy_paragraph_styles_map('paragraph', $element['#paragraph_type']);
+    foreach ($map as $field_name => $styles) {
+      if (!isset($element['subform'][$field_name])) { continue; }
+      $options = &$element['subform'][$field_name]['widget']['#options'];
+
+      // Only keep styles which are listed in the field's style list
+      $options = _classy_style_fields_filter_and_sort_classy_field_options($options, $styles);
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_delete()
+ *
+ * Deleting of a classy paragraph style.
+ * Remove entity types, bundles, and fields config settings
+ * when a classy paragraph style is deleted.
+ */
+function classy_style_fields_classy_paragraphs_style_delete($entity) {
+  // Get the current saved options
+  $entity_fields = \Drupal::configFactory()->get('classy_style_fields.settings')->get(CLASSY_STYLE_FIELDS_CLASSY_FIELDS);
+  $entity_fields = empty($entity_fields) ? [] : $entity_fields;
+
+  $classy_machine_name = $entity->id();
+  unset($entity_fields[$classy_machine_name]);
+
+  \Drupal::configFactory()->getEditable('classy_style_fields.settings')
+    ->set(CLASSY_STYLE_FIELDS_CLASSY_FIELDS, $entity_fields)
+    ->save();
+}
+
+/**
+ * This function contains the map for what classy paragraph styles
+ * are allowed on what paragraph type/field combo. If not listed,
+ * all styles are allowed.
+ *
+ * Example return value for a given entity type and bundle:
+ *   [
+ *     'field_name' => [
+ *      'classy_style_name_1',
+ *      'classy_style_name_2',
+ *      'classy_style_name_3',
+ *      ...
+ *     ],
+ *     'field_name_2' => [
+ *      'classy_style_name_1',
+ *      'classy_style_name_2',
+ *      'classy_style_name_3',
+ *      ...
+ *     ],
+ *   ]
+ */
+function _classy_style_fields_classy_paragraph_styles_map($entity_type, $bundle) {
+  // Load the classy fields config and map into a structured array for the given entity_type and bundle.
+  $entity_fields = \Drupal::configFactory()->get('classy_style_fields.settings')->get(CLASSY_STYLE_FIELDS_CLASSY_FIELDS);
+  $entity_fields = empty($entity_fields) ? [] : $entity_fields;
+
+  $map = [];
+  foreach ($entity_fields as $classy_name => $classy_entities) {
+    if (!isset($classy_entities[$entity_type][$bundle])) { continue; }
+
+    foreach ($classy_entities[$entity_type][$bundle] as $field) {
+      $map[$field][] = $classy_name;
+    }
+  }
+
+  return $map;
+}
+
+function _classy_style_fields_filter_and_sort_classy_field_options($options, $styles, $field_type) {
+  // Only keep styles which are listed in the field's style list.
+  $new_options = array_filter($options, function($v, $k) use ($styles) {
+    return in_array($k, $styles);
+  }, ARRAY_FILTER_USE_BOTH);
+  asort($new_options);
+
+  if ($field_type == 'options_select') {
+    $new_options = array_merge(['_none' => '- None -'], $new_options);
+  }
+
+  return $new_options;
+}
